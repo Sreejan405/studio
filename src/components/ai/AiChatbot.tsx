@@ -1,0 +1,291 @@
+'use client';
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
+import Image from 'next/image';
+import { getProductsByNames } from '@/lib/products';
+import AddToCartButton from '../cart/AddToCartButton';
+import { useCart } from '@/hooks/use-cart';
+
+type Message = {
+    sender: 'user' | 'bot';
+    text?: string;
+    analysis?: SkincareAssistantOutput;
+};
+
+export default function AiChatbot() {
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if(isOpen) {
+            setMessages([{
+                sender: 'bot',
+                text: "Hello! I'm your personal skincare assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
+            }]);
+        }
+    }, [isOpen]);
+    
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({video: true});
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings.',
+        });
+      }
+    };
+
+    const handleCameraOpen = () => {
+        if (hasCameraPermission === null) {
+            getCameraPermission();
+        }
+    }
+
+    const captureImage = () => {
+        if (videoRef.current && canvasRef.current) {
+            const context = canvasRef.current.getContext('2d');
+            if (context) {
+                canvasRef.current.width = videoRef.current.videoWidth;
+                canvasRef.current.height = videoRef.current.videoHeight;
+                context.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
+                const dataUri = canvasRef.current.toDataURL('image/jpeg');
+                setImageUri(dataUri);
+
+                // Stop camera stream
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+                setHasCameraPermission(null);
+            }
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImageUri(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!input.trim() && !imageUri) return;
+
+        const userMessage: Message = { sender: 'user', text: input };
+        setMessages(prev => [...prev, userMessage]);
+        setIsLoading(true);
+        setInput('');
+
+        try {
+            const result = await skincareAssistant({
+                userMessage: input,
+                photoDataUri: imageUri ?? undefined
+            });
+            setMessages(prev => [...prev, { sender: 'bot', analysis: result }]);
+            setImageUri(null); // Clear image after sending
+        } catch (error) {
+            console.error("AI assistant error:", error);
+            setMessages(prev => [...prev, { sender: 'bot', text: "I'm sorry, I encountered an error. Please try again." }]);
+            toast({
+                variant: 'destructive',
+                title: 'AI Assistant Error',
+                description: 'Could not get recommendations at this time.',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogContent className="h-[80vh] max-w-2xl flex flex-col p-0">
+                    <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
+                         <div className="flex items-center gap-2">
+                             <Sparkles className="h-6 w-6 text-primary" />
+                            <CardTitle className="text-lg">Skincare Assistant</CardTitle>
+                         </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {messages.map((msg, index) => (
+                            <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                                {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
+                                <div className={`rounded-lg p-3 max-w-[80%] ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                                    {msg.text && <p className="text-sm">{msg.text}</p>}
+                                    {msg.analysis && <BotResponse analysis={msg.analysis} />}
+                                </div>
+                                 {msg.sender === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0" />}
+                            </div>
+                        ))}
+                         {isLoading && (
+                            <div className="flex items-start gap-3">
+                                <Bot className="h-6 w-6 text-primary flex-shrink-0" />
+                                <div className="rounded-lg p-3 bg-secondary">
+                                    <Loader className="h-5 w-5 animate-spin" />
+                                </div>
+                            </div>
+                        )}
+
+                    </CardContent>
+                    <CardFooter className="border-t p-4">
+                        <div className='w-full space-y-2'>
+                        {imageUri && (
+                            <div className="relative w-24 h-24 rounded-md overflow-hidden">
+                                <Image src={imageUri} alt="Selected" layout="fill" objectFit="cover" />
+                                <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70 text-white" onClick={() => setImageUri(null)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <Input
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Describe your skin concerns..."
+                                disabled={isLoading}
+                            />
+                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                                <Camera className="h-5 w-5" />
+                            </Button>
+                            <Button onClick={handleSendMessage} disabled={isLoading}>
+                                <Send className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                           Your image is used only for skin analysis and is not stored.
+                        </div>
+                        </div>
+                    </CardFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Button
+                className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg"
+                onClick={() => setIsOpen(true)}
+            >
+                <MessageSquare className="h-6 w-6" />
+                <span className="sr-only">Open Skincare Assistant</span>
+            </Button>
+             <canvas ref={canvasRef} className="hidden"></canvas>
+        </>
+    );
+}
+
+
+function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(analysis.recommendations.map(r => r.productName));
+  const products = getProductsByNames(selectedProducts);
+  const total = products.reduce((sum, p) => sum + p.price, 0);
+
+  const handleAddToCart = () => {
+    const productsToAdd = getProductsByNames(selectedProducts);
+    productsToAdd.forEach(p => addToCart(p, 1));
+    toast({
+      title: "Products Added",
+      description: `${selectedProducts.length} products have been added to your cart.`
+    })
+  };
+
+  const handleProductSelection = (productName: string) => {
+    setSelectedProducts(prev => 
+        prev.includes(productName) 
+            ? prev.filter(p => p !== productName) 
+            : [...prev, productName]
+    );
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-bold">Skin Analysis</h3>
+        <p className="text-sm">{analysis.analysis}</p>
+      </div>
+
+      <div>
+        <h3 className="font-bold">Recommended Products</h3>
+        <div className="space-y-3 mt-2">
+          {analysis.recommendations.map((rec) => (
+            <div key={rec.productName} className="flex items-start gap-2">
+                <input 
+                    type="checkbox"
+                    id={rec.productName}
+                    checked={selectedProducts.includes(rec.productName)}
+                    onChange={() => handleProductSelection(rec.productName)}
+                    className='mt-1'
+                />
+                <label htmlFor={rec.productName} className="text-sm">
+                    <span className="font-medium">{rec.productName}</span>: {rec.reason}
+                </label>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+       <div className="bg-background/50 p-3 rounded-md">
+        <h4 className="font-bold">Add to Cart</h4>
+        {selectedProducts.length > 0 ? (
+          <div className="mt-2 space-y-2">
+            <div className="text-sm font-medium flex justify-between">
+                <span>Total:</span>
+                <span>${total.toFixed(2)}</span>
+            </div>
+            <Button onClick={handleAddToCart} size="sm" className="w-full">
+              Add {selectedProducts.length} item(s) to cart
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-1">Select products to add them to your cart.</p>
+        )}
+       </div>
+
+
+      {analysis.morningRoutine.length > 0 && (
+        <div>
+          <h3 className="font-bold">Morning Routine</h3>
+          <ol className="list-decimal list-inside text-sm mt-1">
+            {analysis.morningRoutine.map((step, i) => <li key={`morning-${i}`}>{step}</li>)}
+          </ol>
+        </div>
+      )}
+
+      {analysis.nightRoutine.length > 0 && (
+        <div>
+          <h3 className="font-bold">Night Routine</h3>
+          <ol className="list-decimal list-inside text-sm mt-1">
+            {analysis.nightRoutine.map((step, i) => <li key={`night-${i}`}>{step}</li>)}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}

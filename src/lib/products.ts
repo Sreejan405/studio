@@ -134,3 +134,7 @@ export function getProductBySlug(slug: string): Product | undefined {
 export function getProductsBySlugs(slugs: string[]): Product[] {
   return products.filter((product) => slugs.includes(product.slug));
 }
+
+export function getProductsByNames(names: string[]): Product[] {
+  return products.filter((product) => names.includes(product.name));
+}

@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/generate-product-description.ts';
 import '@/ai/flows/personalized-product-recommendations.ts';
+import '@/ai/flows/skincare-assistant.ts';
