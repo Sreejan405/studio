@@ -13,9 +13,33 @@ export default function RecommendedProducts() {
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    // Add current product to history
+    if (isClient) {
+      const slug = window.location.pathname.split('/').pop();
+      if (window.location.pathname.startsWith('/products/') && slug) {
+        const historyString = sessionStorage.getItem(BROWSER_HISTORY_KEY);
+        let history: string[] = historyString ? JSON.parse(historyString) : [];
+        if (!history.includes(slug)) {
+          history = [slug, ...history].slice(0, 5); // Keep last 5 viewed products
+          sessionStorage.setItem(BROWSER_HISTORY_KEY, JSON.stringify(history));
+        }
+      }
+    }
+  }, [isClient]);
 
   useEffect(() => {
     async function fetchRecommendations() {
+      if (!isClient) {
+        return;
+      }
+
       try {
         const historyString = sessionStorage.getItem(BROWSER_HISTORY_KEY);
         if (!historyString) {
@@ -46,22 +70,9 @@ export default function RecommendedProducts() {
     }
 
     fetchRecommendations();
-  }, []);
-  
-  // Effect to add current product to history
-  useEffect(() => {
-    const slug = window.location.pathname.split('/').pop();
-    if (window.location.pathname.startsWith('/products/') && slug) {
-      const historyString = sessionStorage.getItem(BROWSER_HISTORY_KEY);
-      let history: string[] = historyString ? JSON.parse(historyString) : [];
-      if (!history.includes(slug)) {
-        history = [slug, ...history].slice(0, 5); // Keep last 5 viewed products
-        sessionStorage.setItem(BROWSER_HISTORY_KEY, JSON.stringify(history));
-      }
-    }
-  }, []);
+  }, [isClient]);
 
-  if (isLoading) {
+  if (!isClient || isLoading) {
     return (
         <section className="container mx-auto">
             <div className="text-center">
@@ -80,7 +91,7 @@ export default function RecommendedProducts() {
         </section>
     );
   }
-
+  
   if (error || recommendations.length === 0) {
     return null; // Don't show the section if there's an error or no recommendations
   }
