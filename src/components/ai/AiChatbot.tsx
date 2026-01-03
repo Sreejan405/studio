@@ -157,7 +157,7 @@ export default function AiChatbot() {
                         <div className='w-full space-y-2'>
                         {imageUri && (
                             <div className="relative w-24 h-24 rounded-md overflow-hidden">
-                                <Image src={imageUri} alt="Selected" layout="fill" objectFit="cover" />
+                                <Image src={imageUri} alt="Selected" fill className="object-cover" />
                                 <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70 text-white" onClick={() => setImageUri(null)}>
                                     <X className="h-4 w-4" />
                                 </Button>
