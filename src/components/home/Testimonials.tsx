@@ -36,14 +36,16 @@ export default function Testimonials() {
                     <Card className="h-full">
                       <CardContent className="flex h-full flex-col items-center justify-center p-6 text-center">
                         {placeholder && (
-                          <Image
-                            src={placeholder.imageUrl}
-                            alt={testimonial.name}
-                            width={80}
-                            height={80}
-                            className="mb-4 rounded-full"
-                            data-ai-hint={placeholder.imageHint}
-                          />
+                          <div className="relative h-20 w-20">
+                            <Image
+                              src={placeholder.imageUrl}
+                              alt={testimonial.name}
+                              fill
+                              sizes='(max-width: 768px) 10vw, 5vw'
+                              className="rounded-full object-cover"
+                              data-ai-hint={placeholder.imageHint}
+                            />
+                           </div>
                         )}
                         <p className="italic text-muted-foreground">"{testimonial.text}"</p>
                         <p className="mt-4 font-bold">- {testimonial.name}</p>

@@ -37,6 +37,7 @@ export default function RecommendedProducts() {
   useEffect(() => {
     async function fetchRecommendations() {
       if (!isClient) {
+        setIsLoading(false);
         return;
       }
 
