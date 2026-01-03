@@ -1,3 +1,70 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "A soft, out-of-focus background of leaves and gentle light, conveying a natural and calming atmosphere.",
+      "imageUrl": "https://images.unsplash.com/photo-1702421093671-cc31dee8b7aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxuYXR1cmFsJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc0NDc2MTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "natural background"
+    },
+    {
+      "id": "soothing-aloe-cleanser",
+      "description": "Product shot of a soothing aloe cleanser in minimalist packaging.",
+      "imageUrl": "https://images.unsplash.com/photo-1580870069867-74c57ee1bb07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxza2luY2FyZSUyMHByb2R1Y3R8ZW58MHx8fHwxNzY3NDM5MTQyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "skincare product"
+    },
+    {
+      "id": "radiant-vitamin-c-serum",
+      "description": "Product shot of a radiant vitamin c serum in a dropper bottle.",
+      "imageUrl": "https://images.unsplash.com/photo-1699373381667-a325cbf60dfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzZXJ1bSUyMGJvdHRsZXxlbnwwfHx8fDE3Njc0NDc2MjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "serum bottle"
+    },
+    {
+      "id": "balancing-green-tea-moisturizer",
+      "description": "Product shot of a balancing green tea moisturizer in a jar.",
+      "imageUrl": "https://images.unsplash.com/photo-1621770522713-8b47c60a6227?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmYWNlJTIwY3JlYW18ZW58MHx8fHwxNzY3Mzc5MjY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "face cream"
+    },
+    {
+      "id": "nourishing-jojoba-face-oil",
+      "description": "Product shot of a nourishing jojoba face oil.",
+      "imageUrl": "https://images.unsplash.com/photo-1623826538345-192361e2d4cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8b2lsJTIwYm90dGxlfGVufDB8fHx8MTc2NzQ0NDQ1N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "oil bottle"
+    },
+    {
+      "id": "gentle-oat-exfoliating-scrub",
+      "description": "Product shot of a gentle oat exfoliating scrub.",
+      "imageUrl": "https://images.unsplash.com/photo-1666025062728-c33a25e8ee3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxza2luY2FyZSUyMHNjcnVifGVufDB8fHx8MTc2NzQ0NzYyMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "skincare scrub"
+    },
+    {
+      "id": "hydrating-hyaluronic-mist",
+      "description": "Product shot of a hydrating hyaluronic mist spray bottle.",
+      "imageUrl": "https://images.unsplash.com/photo-1707141715921-d637d096419f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmYWNlJTIwbWlzdHxlbnwwfHx8fDE3Njc0MTM5NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "face mist"
+    },
+    {
+      "id": "testimonial-jane-d",
+      "description": "Headshot of Jane D., a happy customer.",
+      "imageUrl": "https://images.unsplash.com/photo-1592621385612-4d7129426394?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NzMzOTY4MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "testimonial-sarah-l",
+      "description": "Headshot of Sarah L., a happy customer.",
+      "imageUrl": "https://images.unsplash.com/photo-1662850886700-4ec19bd30d11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwc21pbGluZ3xlbnwwfHx8fDE3NjczODUxNTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person smiling"
+    },
+    {
+      "id": "testimonial-emily-r",
+      "description": "Headshot of Emily R., a happy customer.",
+      "imageUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGZhY2V8ZW58MHx8fHwxNzY3NDEwNTQ2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman face"
+    },
+    {
+      "id": "about-us-philosophy",
+      "description": "An aesthetic image representing natural philosophy, like hands holding a plant.",
+      "imageUrl": "https://images.unsplash.com/photo-1639710445999-23334f9cfee2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxuYXR1cmUlMjBoYW5kc3xlbnwwfHx8fDE3Njc0NDc2MTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "nature hands"
+    }
+  ]
 }
