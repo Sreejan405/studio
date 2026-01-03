@@ -27,7 +27,7 @@ export default function ContactPage() {
             <h3 className="font-headline text-xl font-semibold">Email Support</h3>
             <div className="mt-2 flex items-center gap-3 text-muted-foreground">
               <Mail className="h-5 w-5" />
-              <a href="mailto:support@natura.com" className="hover:text-foreground">support@natura.com</a>
+              <a href="mailto:glowniva@gmail.com" className="hover:text-foreground">glowniva@gmail.com</a>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">We'll get back to you within 24 hours.</p>
           </div>
