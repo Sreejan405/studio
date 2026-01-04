@@ -52,6 +52,12 @@ const skincareAssistantFlow = ai.defineFlow(
     outputSchema: SkincareAssistantOutputSchema,
   },
   async (input) => {
+     if (
+      !process.env.SKINCARE_ASSISTANT_API_KEY ||
+      input.apiKey !== process.env.SKINCARE_ASSISTANT_API_KEY
+    ) {
+      throw new Error('Invalid API Key.');
+    }
     const { output } = await prompt(input);
     return output!;
   }

@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
@@ -19,6 +19,8 @@ type Message = {
     analysis?: SkincareAssistantOutput;
 };
 
+const API_KEY_STORAGE_KEY = 'natura_api_key';
+
 export default function AiChatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -30,15 +32,33 @@ export default function AiChatbot() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    const [isApiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+    const [apiKey, setApiKey] = useState('');
+    const [tempApiKey, setTempApiKey] = useState('');
+
+
+    useEffect(() => {
+        const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+        if (storedApiKey) {
+            setApiKey(storedApiKey);
+        }
+    }, []);
 
     useEffect(() => {
         if(isOpen) {
-            setMessages([{
-                sender: 'bot',
-                text: "Hello! I'm your personal skincare assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
-            }]);
+            if (!apiKey) {
+                setMessages([{
+                    sender: 'bot',
+                    text: "Hello! To use the Skincare Assistant, please provide your API key."
+                }]);
+            } else {
+                 setMessages([{
+                    sender: 'bot',
+                    text: "Hello! I'm your personal skincare assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
+                }]);
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, apiKey]);
     
     const getCameraPermission = async () => {
       try {
@@ -95,7 +115,7 @@ export default function AiChatbot() {
     };
 
     const handleSendMessage = async () => {
-        if (!input.trim() && !imageUri) return;
+        if ((!input.trim() && !imageUri) || !apiKey) return;
 
         const userMessage: Message = { sender: 'user', text: input };
         setMessages(prev => [...prev, userMessage]);
@@ -104,6 +124,7 @@ export default function AiChatbot() {
 
         try {
             const result = await skincareAssistant({
+                apiKey: apiKey,
                 userMessage: input,
                 photoDataUri: imageUri ?? undefined
             });
@@ -111,19 +132,58 @@ export default function AiChatbot() {
             setImageUri(null); // Clear image after sending
         } catch (error) {
             console.error("AI assistant error:", error);
-            setMessages(prev => [...prev, { sender: 'bot', text: "I'm sorry, I encountered an error. Please try again." }]);
+            const errorMessage = (error as Error).message.includes('Invalid API Key')
+                ? "Your API Key is invalid. Please update it."
+                : "I'm sorry, I encountered an error. Please try again.";
+
+            setMessages(prev => [...prev, { sender: 'bot', text: errorMessage }]);
             toast({
                 variant: 'destructive',
                 title: 'AI Assistant Error',
-                description: 'Could not get recommendations at this time.',
+                description: (error as Error).message.includes('Invalid API Key')
+                    ? 'Could not authenticate. Please check your API key.'
+                    : 'Could not get recommendations at this time.',
             });
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleSaveApiKey = () => {
+        setApiKey(tempApiKey);
+        localStorage.setItem(API_KEY_STORAGE_KEY, tempApiKey);
+        setApiKeyModalOpen(false);
+        toast({
+            title: 'API Key Saved',
+            description: 'Your API key has been securely stored in your browser.',
+        });
+    };
     
     return (
         <>
+             <Dialog open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                    <DialogTitle>Enter API Key</DialogTitle>
+                    <DialogDescription>
+                        Please enter your API key to use the AI Skincare Assistant. Your key is stored locally in your browser and is not shared.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Input
+                            id="apiKey"
+                            placeholder="Your API Key"
+                            value={tempApiKey}
+                            onChange={(e) => setTempApiKey(e.target.value)}
+                            type="password"
+                        />
+                    </div>
+                    <CardFooter>
+                        <Button onClick={handleSaveApiKey} className='w-full'>Save API Key</Button>
+                    </CardFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="h-[80vh] max-w-2xl flex flex-col p-0">
                     <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
@@ -131,6 +191,10 @@ export default function AiChatbot() {
                              <Sparkles className="h-6 w-6 text-primary" />
                             <CardTitle className="text-lg">Skincare Assistant</CardTitle>
                          </div>
+                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)}>
+                            <KeyRound className="h-5 w-5" />
+                            <span className="sr-only">Set API Key</span>
+                         </Button>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                         {messages.map((msg, index) => (
@@ -168,14 +232,14 @@ export default function AiChatbot() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="Describe your skin concerns..."
-                                disabled={isLoading}
+                                placeholder={!apiKey ? "Please set your API key..." : "Describe your skin concerns..."}
+                                disabled={isLoading || !apiKey}
                             />
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading || !apiKey}>
                                 <Camera className="h-5 w-5" />
                             </Button>
-                            <Button onClick={handleSendMessage} disabled={isLoading}>
+                            <Button onClick={handleSendMessage} disabled={isLoading || !apiKey}>
                                 <Send className="h-5 w-5" />
                             </Button>
                         </div>
