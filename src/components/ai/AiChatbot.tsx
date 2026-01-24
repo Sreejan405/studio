@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -186,16 +186,21 @@ export default function AiChatbot() {
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="h-[80vh] max-w-2xl flex flex-col p-0">
-                    <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
-                         <div className="flex items-center gap-2">
-                             <Sparkles className="h-6 w-6 text-primary" />
-                            <CardTitle className="text-lg">Skincare Assistant</CardTitle>
+                    <DialogHeader className="flex flex-row items-start justify-between border-b p-4">
+                         <div className="space-y-1.5">
+                             <DialogTitle className="flex items-center gap-2 text-lg">
+                                <Sparkles className="h-6 w-6 text-primary" />
+                                <span>Skincare Assistant</span>
+                            </DialogTitle>
+                            <DialogDescription className="pl-8">
+                                Chat with our AI for personalized recommendations.
+                            </DialogDescription>
                          </div>
                          <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)}>
                             <KeyRound className="h-5 w-5" />
                             <span className="sr-only">Set API Key</span>
                          </Button>
-                    </CardHeader>
+                    </DialogHeader>
                     <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                         {messages.map((msg, index) => (
                             <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
