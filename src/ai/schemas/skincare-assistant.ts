@@ -8,7 +8,9 @@ export const SkincareAssistantInputSchema = z.object({
     .describe(
       "An optional photo of the user's face, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  userMessage: z.string().describe('The user query about their skin concerns.'),
+  userMessage: z.string().optional().describe('Additional details or questions from the user.'),
+  skinType: z.string().optional().describe("The user's reported skin type (e.g., Dry, Oily, etc.)."),
+  concerns: z.array(z.string()).optional().describe("A list of the user's skin concerns."),
 });
 export type SkincareAssistantInput = z.infer<
   typeof SkincareAssistantInputSchema

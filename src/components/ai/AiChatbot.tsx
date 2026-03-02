@@ -1,15 +1,17 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
 import Image from 'next/image';
 import { getProductsByNames } from '@/lib/products';
 import { useCart } from '@/hooks/use-cart';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 type Message = {
     sender: 'user' | 'bot';
@@ -20,12 +22,18 @@ type Message = {
 
 const API_KEY_STORAGE_KEY = 'glowniva_api_key';
 
+const SKIN_TYPES = ['Dry', 'Oily', 'Combination', 'Normal', 'Sensitive'];
+const SKIN_CONCERNS = ['Acne', 'Aging', 'Dryness', 'Redness', 'Uneven Tone', 'Dark Circles'];
+
 export default function AiChatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [imageUri, setImageUri] = useState<string | null>(null);
+    const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null);
+    const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
@@ -45,7 +53,7 @@ export default function AiChatbot() {
         if(isOpen && messages.length === 0) {
             setMessages([{
                 sender: 'bot',
-                text: "Welcome to GlowNiva! I'm your personal skincare assistant. Tell me about your skin concerns, or share a photo for a more detailed analysis."
+                text: "Hi there! I'm your GlowNiva Expert. To give you the best routine, tell me a bit about your skin below, or just ask me anything!"
             }]);
         }
     }, [isOpen, messages.length]);
@@ -59,7 +67,7 @@ export default function AiChatbot() {
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            if (file.size > 2 * 1024 * 1024) {
                 toast({
                     variant: 'destructive',
                     title: 'File too large',
@@ -75,22 +83,42 @@ export default function AiChatbot() {
         }
     };
 
+    const toggleConcern = (concern: string) => {
+        setSelectedConcerns(prev => 
+            prev.includes(concern) ? prev.filter(c => c !== concern) : [...prev, concern]
+        );
+    };
+
     const handleSendMessage = async () => {
-        if (!input.trim() && !imageUri) return;
+        if (!input.trim() && !imageUri && !selectedSkinType && selectedConcerns.length === 0) return;
 
         const userMsgText = input.trim();
-        setMessages(prev => [...prev, { sender: 'user', text: userMsgText || (imageUri ? "Sent an image for analysis." : "") }]);
+        let displayMessage = userMsgText;
+        
+        if (!displayMessage) {
+            if (selectedSkinType || selectedConcerns.length > 0) {
+                displayMessage = `I have ${selectedSkinType?.toLowerCase() || 'unspecified'} skin with ${selectedConcerns.join(', ').toLowerCase() || 'no specific'} concerns.`;
+            } else if (imageUri) {
+                displayMessage = "Sent an image for analysis.";
+            }
+        }
+
+        setMessages(prev => [...prev, { sender: 'user', text: displayMessage }]);
         setIsLoading(true);
         setInput('');
 
         try {
             const result = await skincareAssistant({
                 apiKey: apiKey,
-                userMessage: userMsgText || "Analyze my skin based on this photo.",
+                userMessage: userMsgText || undefined,
+                skinType: selectedSkinType || undefined,
+                concerns: selectedConcerns.length > 0 ? selectedConcerns : undefined,
                 photoDataUri: imageUri ?? undefined
             });
             setMessages(prev => [...prev, { sender: 'bot', analysis: result }]);
             setImageUri(null);
+            // Don't clear selections immediately so user can see what they sent, 
+            // but we could if needed.
         } catch (error: any) {
             console.error("AI assistant error:", error);
             const errorMessage = error.message || "I'm sorry, I encountered an error. Please try again.";
@@ -138,24 +166,24 @@ export default function AiChatbot() {
             </Dialog>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="h-[85vh] max-w-2xl flex flex-col p-0 overflow-hidden sm:rounded-xl">
-                    <DialogHeader className="flex flex-row items-center justify-between border-b px-6 py-4 bg-secondary/30">
+                <DialogContent className="h-[90vh] max-w-2xl flex flex-col p-0 overflow-hidden sm:rounded-2xl border-none shadow-2xl">
+                    <DialogHeader className="flex flex-row items-center justify-between border-b px-6 py-4 bg-primary/5">
                          <div className="space-y-0.5">
                              <DialogTitle className="flex items-center gap-2 text-xl font-headline">
                                 <Sparkles className="h-5 w-5 text-primary" />
-                                <span>GlowNiva Assistant</span>
+                                <span>GlowNiva Expert</span>
                             </DialogTitle>
                             <DialogDescription className="text-xs">
-                                Personal skincare analysis and routines.
+                                Personal routine builder & skin analysis.
                             </DialogDescription>
                          </div>
-                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)} className="h-8 w-8">
+                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)} className="h-8 w-8 rounded-full">
                             <KeyRound className="h-4 w-4" />
                             <span className="sr-only">Settings</span>
                          </Button>
                     </DialogHeader>
                     
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
                         {messages.map((msg, index) => (
                             <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                                 <div className={`flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border shadow-sm ${msg.sender === 'user' ? 'bg-background' : 'bg-primary/20'}`}>
@@ -164,9 +192,9 @@ export default function AiChatbot() {
                                 <div className={`rounded-2xl px-4 py-2.5 max-w-[85%] text-sm shadow-sm ${
                                     msg.sender === 'user' 
                                         ? 'bg-primary text-primary-foreground' 
-                                        : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-secondary'
+                                        : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-white border border-border/50'
                                 }`}>
-                                    {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+                                    {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
                                     {msg.analysis && <BotResponse analysis={msg.analysis} />}
                                 </div>
                             </div>
@@ -176,57 +204,101 @@ export default function AiChatbot() {
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-primary/20 shadow-sm">
                                     <Bot className="h-4 w-4 text-primary" />
                                 </div>
-                                <div className="rounded-2xl px-4 py-2.5 bg-secondary shadow-sm">
+                                <div className="rounded-2xl px-4 py-2.5 bg-white border border-border/50 shadow-sm">
                                     <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <CardFooter className="border-t p-4 bg-background">
-                        <div className='w-full space-y-3'>
-                        {imageUri && (
-                            <div className="relative w-20 h-20 rounded-lg overflow-hidden border shadow-sm group">
-                                <Image src={imageUri} alt="Preview" fill className="object-cover" />
-                                <button 
-                                    className="absolute top-1 right-1 h-5 w-5 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors" 
-                                    onClick={() => setImageUri(null)}
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
+                    <CardFooter className="border-t p-4 bg-background flex flex-col gap-4">
+                        <div className="w-full space-y-4">
+                            {/* Structured Inputs */}
+                            <div className="space-y-3">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Skin Type</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {SKIN_TYPES.map(type => (
+                                            <button
+                                                key={type}
+                                                onClick={() => setSelectedSkinType(selectedSkinType === type ? null : type)}
+                                                className={cn(
+                                                    "px-3 py-1 rounded-full text-xs transition-all border",
+                                                    selectedSkinType === type 
+                                                        ? "bg-primary border-primary text-primary-foreground shadow-sm" 
+                                                        : "bg-secondary/50 border-transparent hover:border-primary/30"
+                                                )}
+                                            >
+                                                {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Concerns</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {SKIN_CONCERNS.map(concern => (
+                                            <button
+                                                key={concern}
+                                                onClick={() => toggleConcern(concern)}
+                                                className={cn(
+                                                    "px-3 py-1 rounded-full text-xs transition-all border",
+                                                    selectedConcerns.includes(concern) 
+                                                        ? "bg-accent border-accent text-accent-foreground shadow-sm" 
+                                                        : "bg-secondary/50 border-transparent hover:border-accent/30"
+                                                )}
+                                            >
+                                                {concern}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                                placeholder="Describe your skin concerns..."
-                                className="flex-1 bg-secondary/50 border-none focus-visible:ring-1"
-                                disabled={isLoading}
-                            />
-                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                            <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="rounded-full shrink-0 h-10 w-10" 
-                                onClick={() => fileInputRef.current?.click()} 
-                                disabled={isLoading}
-                            >
-                                <Camera className="h-5 w-5" />
-                            </Button>
-                            <Button 
-                                onClick={handleSendMessage} 
-                                className="rounded-full shrink-0 h-10 w-10"
-                                disabled={isLoading || (!input.trim() && !imageUri)}
-                            >
-                                <Send className="h-5 w-5" />
-                            </Button>
+
+                            <div className="flex flex-col gap-3">
+                                {imageUri && (
+                                    <div className="relative w-20 h-20 rounded-lg overflow-hidden border shadow-sm group">
+                                        <Image src={imageUri} alt="Preview" fill className="object-cover" />
+                                        <button 
+                                            className="absolute top-1 right-1 h-5 w-5 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors" 
+                                            onClick={() => setImageUri(null)}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                                        placeholder="Add any other details..."
+                                        className="flex-1 bg-secondary/30 border-none focus-visible:ring-1 h-11"
+                                        disabled={isLoading}
+                                    />
+                                    <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        className="rounded-full shrink-0 h-11 w-11" 
+                                        onClick={() => fileInputRef.current?.click()} 
+                                        disabled={isLoading}
+                                    >
+                                        <Camera className="h-5 w-5" />
+                                    </Button>
+                                    <Button 
+                                        onClick={handleSendMessage} 
+                                        className="rounded-full shrink-0 h-11 w-11"
+                                        disabled={isLoading || (!input.trim() && !imageUri && !selectedSkinType && selectedConcerns.length === 0)}
+                                    >
+                                        <Send className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-[10px] text-center text-muted-foreground">
-                           AI can make mistakes. Consider professional advice for medical skin conditions.
+                        <p className="text-[9px] text-center text-muted-foreground w-full">
+                           Our assistant uses AI to provide suggestions. For medical conditions, please see a dermatologist.
                         </p>
-                        </div>
                     </CardFooter>
                 </DialogContent>
             </Dialog>
@@ -235,7 +307,7 @@ export default function AiChatbot() {
                 className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl hover:scale-105 transition-transform"
                 onClick={() => setIsOpen(true)}
             >
-                <MessageSquare className="h-6 w-6" />
+                <Sparkles className="h-6 w-6" />
                 <span className="sr-only">Open Assistant</span>
             </Button>
         </>
@@ -278,10 +350,10 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Recommended Rituals</h3>
+        <h3 className="font-bold text-xs uppercase tracking-widest text-muted-foreground px-1">Recommended Rituals</h3>
         <div className="space-y-2.5">
           {analysis.recommendations.map((rec) => (
-            <div key={rec.productName} className="flex items-start gap-3 bg-background/40 p-2.5 rounded-xl border border-border/50">
+            <div key={rec.productName} className="flex items-start gap-3 bg-secondary/20 p-3 rounded-2xl border border-border/30">
                 <input 
                     type="checkbox"
                     id={`chat-${rec.productName}`}
@@ -290,7 +362,8 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
                     className='mt-1 h-4 w-4 rounded-full accent-primary cursor-pointer'
                 />
                 <label htmlFor={`chat-${rec.productName}`} className="text-sm cursor-pointer leading-snug">
-                    <span className="font-bold">{rec.productName}</span>: <span className="text-muted-foreground">{rec.reason}</span>
+                    <span className="font-bold block mb-0.5">{rec.productName}</span>
+                    <span className="text-muted-foreground text-xs">{rec.reason}</span>
                 </label>
             </div>
           ))}
@@ -302,25 +375,31 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
             <span className="text-xs font-semibold uppercase tracking-wide">Ready for Glow?</span>
             <span className="text-sm font-bold">₹{total.toLocaleString('en-IN')}</span>
         </div>
-        <Button onClick={handleAddToCart} size="sm" className="w-full h-9 rounded-xl font-semibold" disabled={selectedProducts.length === 0}>
-          Add {selectedProducts.length} Selected to Cart
+        <Button onClick={handleAddToCart} size="sm" className="w-full h-10 rounded-xl font-semibold shadow-sm" disabled={selectedProducts.length === 0}>
+          Add {selectedProducts.length} to Cart
         </Button>
        </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {analysis.morningRoutine.length > 0 && (
-            <div className="space-y-1.5 bg-background/30 p-3 rounded-xl">
-                <h4 className="font-bold text-xs uppercase text-primary">AM Routine</h4>
-                <ol className="space-y-1 text-xs list-decimal list-inside">
+            <div className="space-y-2 bg-white/50 p-4 rounded-2xl border border-border/50">
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <h4 className="font-bold text-[10px] uppercase tracking-wider text-primary">Morning</h4>
+                </div>
+                <ol className="space-y-1.5 text-xs list-decimal list-inside">
                     {analysis.morningRoutine.map((step, i) => <li key={`morning-${i}`} className="text-muted-foreground">{step}</li>)}
                 </ol>
             </div>
         )}
 
         {analysis.nightRoutine.length > 0 && (
-            <div className="space-y-1.5 bg-background/30 p-3 rounded-xl">
-                <h4 className="font-bold text-xs uppercase text-accent">PM Routine</h4>
-                <ol className="space-y-1 text-xs list-decimal list-inside">
+            <div className="space-y-2 bg-white/50 p-4 rounded-2xl border border-border/50">
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    <h4 className="font-bold text-[10px] uppercase tracking-wider text-accent">Night</h4>
+                </div>
+                <ol className="space-y-1.5 text-xs list-decimal list-inside">
                     {analysis.nightRoutine.map((step, i) => <li key={`night-${i}`} className="text-muted-foreground">{step}</li>)}
                 </ol>
             </div>

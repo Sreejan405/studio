@@ -33,13 +33,15 @@ AVAILABLE GLOWNIVA PRODUCTS:
 ${productContext}
 
 USER CONTEXT:
-Message: {{{userMessage}}}
+{{#if skinType}}Skin Type: {{{skinType}}}{{/if}}
+{{#if concerns}}Concerns: {{#each concerns}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
+{{#if userMessage}}Message: {{{userMessage}}}{{/if}}
 {{#if photoDataUri}}
 Photo: {{media url=photoDataUri}}
 {{/if}}
 
 INSTRUCTIONS:
-1. **Analyze:** Carefully evaluate the user's concerns based on their text and optional photo. Focus on skin texture, hydration needs, and visible sensitivities. 
+1. **Analyze:** Carefully evaluate the user's concerns based on their selected skin type, concerns, text, and optional photo. Focus on skin texture, hydration needs, and visible sensitivities. 
 2. **Tone:** Be encouraging, calm, and trustworthy. Use "we" and "our" to represent the brand.
 3. **Recommend:** Select 2-4 products that best address the concerns. Use the EXACT product names from the list above.
 4. **Routine:** Create a Morning and Night routine using the recommended products. Explain the order clearly.
@@ -63,7 +65,6 @@ const skincareAssistantFlow = ai.defineFlow(
     }
     
     // If no server key is set, we allow the request for testing/demo purposes
-    // but log a warning to the console.
     if (!serverApiKey) {
       console.warn('SKINCARE_ASSISTANT_API_KEY is not set in environment variables.');
     }
