@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,7 +8,7 @@ import AiChatbot from '@/components/ai/AiChatbot';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Natura Skincare | Natural, Clean, and Kind to Your Skin',
+  title: 'GlowNiva Skincare | Natural, Clean, and Kind to Your Skin',
   description:
     'Discover our range of natural skincare products. Clean, minimal, and trustworthy for your daily routine.',
 };

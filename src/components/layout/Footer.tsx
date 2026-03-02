@@ -28,14 +28,14 @@ export default function Footer() {
             <h3 className="mb-4 font-headline text-lg font-semibold">Follow Us</h3>
             <div className="flex space-x-4">
               <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-foreground"><Facebook size={20} /></a>
-              <a href="https://www.instagram.com/glowniva/" aria-label="Instagram" className="text-muted-foreground hover:text-foreground"><Instagram size={20} /></a>
+              <a href="https://www.instagram.com/glowniva/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-muted-foreground hover:text-foreground"><Instagram size={20} /></a>
               <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-foreground"><Twitter size={20} /></a>
             </div>
           </div>
         </div>
         <div className="mt-8 border-t pt-4 text-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Natura Skincare. All Rights Reserved.
+            &copy; {new Date().getFullYear()} GlowNiva Skincare. All Rights Reserved.
           </p>
         </div>
       </div>

@@ -28,7 +28,7 @@ export default function WhyChooseUs() {
     <section className="bg-secondary/50">
       <div className="container mx-auto">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-headline text-3xl font-bold md:text-4xl">The Natura Promise</h2>
+          <h2 className="font-headline text-3xl font-bold md:text-4xl">The GlowNiva Promise</h2>
           <p className="mt-2 text-muted-foreground">
             Our commitment to clean, conscious skincare is in everything we do.
           </p>

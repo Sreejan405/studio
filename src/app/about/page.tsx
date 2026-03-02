@@ -13,7 +13,7 @@ export default function AboutPage() {
         <AnimatedOnScroll>
           <h1 className="font-headline text-4xl font-bold md:text-5xl">Our Story</h1>
           <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-            Born from a belief in the power of nature, Natura Skincare is a journey back to simplicity. We create honest, effective skincare for everyone.
+            Born from a belief in the power of nature, GlowNiva Skincare is a journey back to simplicity. We create honest, effective skincare for everyone.
           </p>
           </AnimatedOnScroll>
         </div>

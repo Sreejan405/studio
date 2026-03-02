@@ -8,7 +8,7 @@ export const products: Product[] = [
     benefit: 'Gently purifies and calms skin.',
     description:
       "Our Soothing Aloe Cleanser is a gentle, sulfate-free formula that effectively removes impurities while maintaining your skin's natural moisture balance. Infused with pure aloe vera and chamomile extract, it calms irritation and reduces redness, leaving your skin feeling clean, soft, and refreshed. Perfect for daily use on all skin types, including sensitive skin.",
-    price: 24.0,
+    price: 1299.0,
     image: { id: 'soothing-aloe-cleanser' },
     ingredients: ['Aloe Barbadensis Leaf Juice', 'Glycerin', 'Chamomilla Recutita (Matricaria) Flower Extract', 'Decyl Glucoside'],
     howToUse: [
@@ -26,7 +26,7 @@ export const products: Product[] = [
     benefit: 'Brightens and evens skin tone.',
     description:
       'Unlock a brighter, more even complexion with our Radiant Vitamin C Serum. This potent antioxidant powerhouse combines stabilized Vitamin C with Ferulic Acid and Vitamin E to protect against environmental stressors, boost collagen production, and fade dark spots. The lightweight, fast-absorbing formula leaves your skin with a healthy, luminous glow.',
-    price: 48.0,
+    price: 2499.0,
     image: { id: 'radiant-vitamin-c-serum' },
     ingredients: ['Water', 'Ascorbic Acid (Vitamin C)', 'Tocopherol (Vitamin E)', 'Ferulic Acid', 'Sodium Hyaluronate'],
     howToUse: [
@@ -43,7 +43,7 @@ export const products: Product[] = [
     benefit: 'Hydrates and controls excess oil.',
     description:
       "Achieve perfect harmony with our Balancing Green Tea Moisturizer. This lightweight, non-greasy lotion provides essential hydration while helping to control shine and minimize the appearance of pores. Rich in green tea antioxidants, it soothes inflammation and protects the skin. Ideal for combination to oily skin types, it leaves your complexion feeling fresh and balanced.",
-    price: 36.0,
+    price: 1899.0,
     image: { id: 'balancing-green-tea-moisturizer' },
     ingredients: ['Camellia Sinensis (Green Tea) Leaf Extract', 'Glycerin', 'Niacinamide', 'Squalane'],
     howToUse: [
@@ -59,7 +59,7 @@ export const products: Product[] = [
     benefit: 'Deeply moisturizes and restores.',
     description:
       'Restore your skin’s natural radiance with our Nourishing Jojoba Face Oil. This luxurious, quick-absorbing oil blend is rich in vitamins and fatty acids that deeply moisturize and repair the skin barrier. Jojoba oil mimics the skin’s natural sebum, providing balanced hydration without clogging pores. A few drops are all you need for a soft, supple, and glowing complexion.',
-    price: 42.0,
+    price: 2199.0,
     image: { id: 'nourishing-jojoba-face-oil' },
     ingredients: ['Simmondsia Chinensis (Jojoba) Seed Oil', 'Rosa Canina (Rosehip) Fruit Oil', 'Squalane', 'Tocopherol (Vitamin E)'],
     howToUse: [
@@ -76,7 +76,7 @@ export const products: Product[] = [
     benefit: 'Softens and smooths texture.',
     description:
       "Reveal a smoother, brighter complexion without irritation. Our Gentle Oat Exfoliating Scrub uses finely milled oatmeal and biodegradable jojoba beads to delicately buff away dead skin cells. Enriched with calendula and honey, it soothes and hydrates, making it gentle enough for sensitive skin while effectively refining skin texture.",
-    price: 28.0,
+    price: 1499.0,
     image: { id: 'gentle-oat-exfoliating-scrub' },
     ingredients: ['Avena Sativa (Oat) Kernel Meal', 'Glycerin', 'Jojoba Esters', 'Calendula Officinalis Flower Extract', 'Honey'],
     howToUse: [
@@ -94,7 +94,7 @@ export const products: Product[] = [
     benefit: 'Instantly refreshes and plumps.',
     description:
       'A refreshing oasis for your skin. This ultra-fine mist delivers a burst of hydration with multi-molecular weight hyaluronic acid that plumps skin from within. Rosewater and cucumber extract provide a soothing, aromatic experience, instantly reviving tired, dull skin. Use it to set makeup or for a moisture boost anytime, anywhere.',
-    price: 22.0,
+    price: 999.0,
     image: { id: 'hydrating-hyaluronic-mist' },
     ingredients: ['Rosa Damascena Flower Water', 'Sodium Hyaluronate', 'Cucumis Sativus (Cucumber) Fruit Extract', 'Glycerin'],
     howToUse: [
@@ -110,7 +110,7 @@ export const testimonials: Testimonial[] = [
   {
     id: '1',
     name: 'Jane D.',
-    text: "Natura's Vitamin C Serum has completely transformed my skin. It's brighter, more even, and feels so healthy. I can't imagine my routine without it now.",
+    text: "GlowNiva's Vitamin C Serum has completely transformed my skin. It's brighter, more even, and feels so healthy. I can't imagine my routine without it now.",
     image: { id: 'testimonial-jane-d' },
   },
   {

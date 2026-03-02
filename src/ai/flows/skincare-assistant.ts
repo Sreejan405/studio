@@ -26,7 +26,7 @@ const prompt = ai.definePrompt({
   name: 'skincareAssistantPrompt',
   input: { schema: SkincareAssistantInputSchema },
   output: { schema: SkincareAssistantOutputSchema },
-  prompt: `You are an expert, friendly, and calm skincare assistant for Natura Skincare. Your goal is to analyze a user's skin concerns and recommend a suitable routine using only products from our brand.
+  prompt: `You are an expert, friendly, and calm skincare assistant for GlowNiva Skincare. Your goal is to analyze a user's skin concerns and recommend a suitable routine using only products from our brand.
 
 Available products:
 ${productList}

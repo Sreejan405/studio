@@ -22,7 +22,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      const savedCart = localStorage.getItem('natura_cart');
+      const savedCart = localStorage.getItem('glowniva_cart');
       if (savedCart) {
         setCart(JSON.parse(savedCart));
       }
@@ -33,7 +33,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('natura_cart', JSON.stringify(cart));
+    localStorage.setItem('glowniva_cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product: Product, quantity: number) => {

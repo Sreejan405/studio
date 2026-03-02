@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,6 @@ import * as z from 'zod';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  updateProfile 
 } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -29,7 +27,6 @@ import { Loader2 } from 'lucide-react';
 const authSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  displayName: z.string().optional(),
 });
 
 type AuthValues = z.infer<typeof authSchema>;
@@ -46,7 +43,6 @@ export default function LoginPage() {
     defaultValues: {
       email: '',
       password: '',
-      displayName: '',
     },
   });
 
@@ -54,13 +50,10 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       if (isSignUp) {
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        if (values.displayName) {
-          await updateProfile(userCredential.user, { displayName: values.displayName });
-        }
+        await createUserWithEmailAndPassword(auth, values.email, values.password);
         toast({
           title: 'Account created!',
-          description: 'Welcome to Natura Skincare.',
+          description: 'Welcome to GlowNiva Skincare.',
         });
       } else {
         await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -97,21 +90,6 @@ export default function LoginPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {isSignUp && (
-                <FormField
-                  control={form.control}
-                  name="displayName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jane Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
               <FormField
                 control={form.control}
                 name="email"

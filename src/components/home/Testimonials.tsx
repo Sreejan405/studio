@@ -16,7 +16,7 @@ export default function Testimonials() {
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-headline text-3xl font-bold md:text-4xl">Loved by our Community</h2>
         <p className="mt-2 text-muted-foreground">
-          Real stories from real people who trust Natura with their skin.
+          Real stories from real people who trust GlowNiva with their skin.
         </p>
       </div>
       <div className="mt-12">

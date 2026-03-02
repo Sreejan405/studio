@@ -6,11 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
 import Image from 'next/image';
 import { getProductsByNames } from '@/lib/products';
-import AddToCartButton from '../cart/AddToCartButton';
 import { useCart } from '@/hooks/use-cart';
 
 type Message = {
@@ -19,7 +17,7 @@ type Message = {
     analysis?: SkincareAssistantOutput;
 };
 
-const API_KEY_STORAGE_KEY = 'natura_api_key';
+const API_KEY_STORAGE_KEY = 'glowniva_api_key';
 
 export default function AiChatbot() {
     const [isOpen, setIsOpen] = useState(false);
@@ -49,12 +47,12 @@ export default function AiChatbot() {
             if (!apiKey) {
                 setMessages([{
                     sender: 'bot',
-                    text: "Hello! To use the Skincare Assistant, please provide your API key."
+                    text: "Hello! To use the GlowNiva Assistant, please provide your API key."
                 }]);
             } else {
                  setMessages([{
                     sender: 'bot',
-                    text: "Hello! I'm your personal skincare assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
+                    text: "Hello! I'm your personal GlowNiva assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
                 }]);
             }
         }
@@ -78,12 +76,6 @@ export default function AiChatbot() {
         });
       }
     };
-
-    const handleCameraOpen = () => {
-        if (hasCameraPermission === null) {
-            getCameraPermission();
-        }
-    }
 
     const captureImage = () => {
         if (videoRef.current && canvasRef.current) {
@@ -190,7 +182,7 @@ export default function AiChatbot() {
                          <div className="space-y-1.5">
                              <DialogTitle className="flex items-center gap-2 text-lg">
                                 <Sparkles className="h-6 w-6 text-primary" />
-                                <span>Skincare Assistant</span>
+                                <span>GlowNiva Assistant</span>
                             </DialogTitle>
                             <DialogDescription className="pl-8">
                                 Chat with our AI for personalized recommendations.
@@ -261,7 +253,7 @@ export default function AiChatbot() {
                 onClick={() => setIsOpen(true)}
             >
                 <MessageSquare className="h-6 w-6" />
-                <span className="sr-only">Open Skincare Assistant</span>
+                <span className="sr-only">Open GlowNiva Assistant</span>
             </Button>
              <canvas ref={canvasRef} className="hidden"></canvas>
         </>
@@ -326,7 +318,7 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
           <div className="mt-2 space-y-2">
             <div className="text-sm font-medium flex justify-between">
                 <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₹{total.toLocaleString('en-IN')}</span>
             </div>
             <Button onClick={handleAddToCart} size="sm" className="w-full">
               Add {selectedProducts.length} item(s) to cart
