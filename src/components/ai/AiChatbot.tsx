@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound } from 'lucide-react';
+import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
@@ -15,6 +15,7 @@ type Message = {
     sender: 'user' | 'bot';
     text?: string;
     analysis?: SkincareAssistantOutput;
+    isError?: boolean;
 };
 
 const API_KEY_STORAGE_KEY = 'glowniva_api_key';
@@ -24,80 +25,48 @@ export default function AiChatbot() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
     const [imageUri, setImageUri] = useState<string | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isApiKeyModalOpen, setApiKeyModalOpen] = useState(false);
     const [apiKey, setApiKey] = useState('');
     const [tempApiKey, setTempApiKey] = useState('');
 
-
     useEffect(() => {
         const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
         if (storedApiKey) {
             setApiKey(storedApiKey);
+            setTempApiKey(storedApiKey);
         }
     }, []);
 
     useEffect(() => {
-        if(isOpen) {
-            if (!apiKey) {
-                setMessages([{
-                    sender: 'bot',
-                    text: "Hello! To use the GlowNiva Assistant, please provide your API key."
-                }]);
-            } else {
-                 setMessages([{
-                    sender: 'bot',
-                    text: "Hello! I'm your personal GlowNiva assistant. To get started, please describe your skin concerns. You can also upload or take a photo for a more accurate analysis."
-                }]);
-            }
+        if(isOpen && messages.length === 0) {
+            setMessages([{
+                sender: 'bot',
+                text: "Welcome to GlowNiva! I'm your personal skincare assistant. Tell me about your skin concerns, or share a photo for a more detailed analysis."
+            }]);
         }
-    }, [isOpen, apiKey]);
-    
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({video: true});
-        setHasCameraPermission(true);
+    }, [isOpen, messages.length]);
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings.',
-        });
-      }
-    };
-
-    const captureImage = () => {
-        if (videoRef.current && canvasRef.current) {
-            const context = canvasRef.current.getContext('2d');
-            if (context) {
-                canvasRef.current.width = videoRef.current.videoWidth;
-                canvasRef.current.height = videoRef.current.videoHeight;
-                context.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
-                const dataUri = canvasRef.current.toDataURL('image/jpeg');
-                setImageUri(dataUri);
-
-                // Stop camera stream
-                const stream = videoRef.current.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
-                setHasCameraPermission(null);
-            }
-        }
-    };
+    }, [messages, isLoading]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File too large',
+                    description: 'Please upload an image smaller than 2MB.',
+                });
+                return;
+            }
             const reader = new FileReader();
             reader.onload = (e) => {
                 setImageUri(e.target?.result as string);
@@ -107,35 +76,29 @@ export default function AiChatbot() {
     };
 
     const handleSendMessage = async () => {
-        if ((!input.trim() && !imageUri) || !apiKey) return;
+        if (!input.trim() && !imageUri) return;
 
-        const userMessage: Message = { sender: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const userMsgText = input.trim();
+        setMessages(prev => [...prev, { sender: 'user', text: userMsgText || (imageUri ? "Sent an image for analysis." : "") }]);
         setIsLoading(true);
         setInput('');
 
         try {
             const result = await skincareAssistant({
                 apiKey: apiKey,
-                userMessage: input,
+                userMessage: userMsgText || "Analyze my skin based on this photo.",
                 photoDataUri: imageUri ?? undefined
             });
             setMessages(prev => [...prev, { sender: 'bot', analysis: result }]);
-            setImageUri(null); // Clear image after sending
-        } catch (error) {
+            setImageUri(null);
+        } catch (error: any) {
             console.error("AI assistant error:", error);
-            const errorMessage = (error as Error).message.includes('Invalid API Key')
-                ? "Your API Key is invalid. Please update it."
-                : "I'm sorry, I encountered an error. Please try again.";
-
-            setMessages(prev => [...prev, { sender: 'bot', text: errorMessage }]);
-            toast({
-                variant: 'destructive',
-                title: 'AI Assistant Error',
-                description: (error as Error).message.includes('Invalid API Key')
-                    ? 'Could not authenticate. Please check your API key.'
-                    : 'Could not get recommendations at this time.',
-            });
+            const errorMessage = error.message || "I'm sorry, I encountered an error. Please try again.";
+            setMessages(prev => [...prev, { sender: 'bot', text: errorMessage, isError: true }]);
+            
+            if (errorMessage.toLowerCase().includes('api key')) {
+                setApiKeyModalOpen(true);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -146,116 +109,135 @@ export default function AiChatbot() {
         localStorage.setItem(API_KEY_STORAGE_KEY, tempApiKey);
         setApiKeyModalOpen(false);
         toast({
-            title: 'API Key Saved',
-            description: 'Your API key has been securely stored in your browser.',
+            title: 'Settings Updated',
+            description: 'Your API key has been saved.',
         });
     };
     
     return (
         <>
-             <Dialog open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
+            <Dialog open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                    <DialogTitle>Enter API Key</DialogTitle>
+                    <DialogTitle>Assistant Settings</DialogTitle>
                     <DialogDescription>
-                        Please enter your API key to use the AI Skincare Assistant. Your key is stored locally in your browser and is not shared.
+                        Enter your API key to enable AI skincare analysis. This is stored locally in your browser.
                     </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <Input
                             id="apiKey"
-                            placeholder="Your API Key"
+                            placeholder="Your Secret API Key"
                             value={tempApiKey}
                             onChange={(e) => setTempApiKey(e.target.value)}
                             type="password"
                         />
                     </div>
-                    <CardFooter>
-                        <Button onClick={handleSaveApiKey} className='w-full'>Save API Key</Button>
-                    </CardFooter>
+                    <Button onClick={handleSaveApiKey} className='w-full'>Save & Continue</Button>
                 </DialogContent>
             </Dialog>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="h-[80vh] max-w-2xl flex flex-col p-0">
-                    <DialogHeader className="flex flex-row items-start justify-between border-b p-4">
-                         <div className="space-y-1.5">
-                             <DialogTitle className="flex items-center gap-2 text-lg">
-                                <Sparkles className="h-6 w-6 text-primary" />
+                <DialogContent className="h-[85vh] max-w-2xl flex flex-col p-0 overflow-hidden sm:rounded-xl">
+                    <DialogHeader className="flex flex-row items-center justify-between border-b px-6 py-4 bg-secondary/30">
+                         <div className="space-y-0.5">
+                             <DialogTitle className="flex items-center gap-2 text-xl font-headline">
+                                <Sparkles className="h-5 w-5 text-primary" />
                                 <span>GlowNiva Assistant</span>
                             </DialogTitle>
-                            <DialogDescription className="pl-8">
-                                Chat with our AI for personalized recommendations.
+                            <DialogDescription className="text-xs">
+                                Personal skincare analysis and routines.
                             </DialogDescription>
                          </div>
-                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)}>
-                            <KeyRound className="h-5 w-5" />
-                            <span className="sr-only">Set API Key</span>
+                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)} className="h-8 w-8">
+                            <KeyRound className="h-4 w-4" />
+                            <span className="sr-only">Settings</span>
                          </Button>
                     </DialogHeader>
-                    <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                    
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
                         {messages.map((msg, index) => (
-                            <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                                {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                                <div className={`rounded-lg p-3 max-w-[80%] ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
-                                    {msg.text && <p className="text-sm">{msg.text}</p>}
+                            <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                                <div className={`flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border shadow-sm ${msg.sender === 'user' ? 'bg-background' : 'bg-primary/20'}`}>
+                                    {msg.sender === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4 text-primary" />}
+                                </div>
+                                <div className={`rounded-2xl px-4 py-2.5 max-w-[85%] text-sm shadow-sm ${
+                                    msg.sender === 'user' 
+                                        ? 'bg-primary text-primary-foreground' 
+                                        : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-secondary'
+                                }`}>
+                                    {msg.text && <p className="leading-relaxed">{msg.text}</p>}
                                     {msg.analysis && <BotResponse analysis={msg.analysis} />}
                                 </div>
-                                 {msg.sender === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0" />}
                             </div>
                         ))}
                          {isLoading && (
                             <div className="flex items-start gap-3">
-                                <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-                                <div className="rounded-lg p-3 bg-secondary">
-                                    <Loader className="h-5 w-5 animate-spin" />
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-primary/20 shadow-sm">
+                                    <Bot className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="rounded-2xl px-4 py-2.5 bg-secondary shadow-sm">
+                                    <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
                                 </div>
                             </div>
                         )}
+                    </div>
 
-                    </CardContent>
-                    <CardFooter className="border-t p-4">
-                        <div className='w-full space-y-2'>
+                    <CardFooter className="border-t p-4 bg-background">
+                        <div className='w-full space-y-3'>
                         {imageUri && (
-                            <div className="relative w-24 h-24 rounded-md overflow-hidden">
-                                <Image src={imageUri} alt="Selected" fill className="object-cover" />
-                                <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70 text-white" onClick={() => setImageUri(null)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
+                            <div className="relative w-20 h-20 rounded-lg overflow-hidden border shadow-sm group">
+                                <Image src={imageUri} alt="Preview" fill className="object-cover" />
+                                <button 
+                                    className="absolute top-1 right-1 h-5 w-5 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors" 
+                                    onClick={() => setImageUri(null)}
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
                             </div>
                         )}
                         <div className="flex items-center gap-2">
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder={!apiKey ? "Please set your API key..." : "Describe your skin concerns..."}
-                                disabled={isLoading || !apiKey}
+                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                                placeholder="Describe your skin concerns..."
+                                className="flex-1 bg-secondary/50 border-none focus-visible:ring-1"
+                                disabled={isLoading}
                             />
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading || !apiKey}>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="rounded-full shrink-0 h-10 w-10" 
+                                onClick={() => fileInputRef.current?.click()} 
+                                disabled={isLoading}
+                            >
                                 <Camera className="h-5 w-5" />
                             </Button>
-                            <Button onClick={handleSendMessage} disabled={isLoading || !apiKey}>
+                            <Button 
+                                onClick={handleSendMessage} 
+                                className="rounded-full shrink-0 h-10 w-10"
+                                disabled={isLoading || (!input.trim() && !imageUri)}
+                            >
                                 <Send className="h-5 w-5" />
                             </Button>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                           Your image is used only for skin analysis and is not stored.
-                        </div>
+                        <p className="text-[10px] text-center text-muted-foreground">
+                           AI can make mistakes. Consider professional advice for medical skin conditions.
+                        </p>
                         </div>
                     </CardFooter>
                 </DialogContent>
             </Dialog>
 
             <Button
-                className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg"
+                className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl hover:scale-105 transition-transform"
                 onClick={() => setIsOpen(true)}
             >
                 <MessageSquare className="h-6 w-6" />
-                <span className="sr-only">Open GlowNiva Assistant</span>
+                <span className="sr-only">Open Assistant</span>
             </Button>
-             <canvas ref={canvasRef} className="hidden"></canvas>
         </>
     );
 }
@@ -272,8 +254,8 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
     const productsToAdd = getProductsByNames(selectedProducts);
     productsToAdd.forEach(p => addToCart(p, 1));
     toast({
-      title: "Products Added",
-      description: `${selectedProducts.length} products have been added to your cart.`
+      title: "Routine Added",
+      description: `${selectedProducts.length} items added to your cart.`
     })
   };
 
@@ -286,67 +268,64 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
   };
   
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="font-bold">Skin Analysis</h3>
-        <p className="text-sm">{analysis.analysis}</p>
+    <div className="space-y-5 py-2">
+      <div className="space-y-1">
+        <h3 className="font-bold text-base flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            Skin Analysis
+        </h3>
+        <p className="text-sm leading-relaxed opacity-90">{analysis.analysis}</p>
       </div>
 
-      <div>
-        <h3 className="font-bold">Recommended Products</h3>
-        <div className="space-y-3 mt-2">
+      <div className="space-y-2">
+        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Recommended Rituals</h3>
+        <div className="space-y-2.5">
           {analysis.recommendations.map((rec) => (
-            <div key={rec.productName} className="flex items-start gap-2">
+            <div key={rec.productName} className="flex items-start gap-3 bg-background/40 p-2.5 rounded-xl border border-border/50">
                 <input 
                     type="checkbox"
-                    id={rec.productName}
+                    id={`chat-${rec.productName}`}
                     checked={selectedProducts.includes(rec.productName)}
                     onChange={() => handleProductSelection(rec.productName)}
-                    className='mt-1'
+                    className='mt-1 h-4 w-4 rounded-full accent-primary cursor-pointer'
                 />
-                <label htmlFor={rec.productName} className="text-sm">
-                    <span className="font-medium">{rec.productName}</span>: {rec.reason}
+                <label htmlFor={`chat-${rec.productName}`} className="text-sm cursor-pointer leading-snug">
+                    <span className="font-bold">{rec.productName}</span>: <span className="text-muted-foreground">{rec.reason}</span>
                 </label>
             </div>
           ))}
         </div>
       </div>
       
-       <div className="bg-background/50 p-3 rounded-md">
-        <h4 className="font-bold">Add to Cart</h4>
-        {selectedProducts.length > 0 ? (
-          <div className="mt-2 space-y-2">
-            <div className="text-sm font-medium flex justify-between">
-                <span>Total:</span>
-                <span>₹{total.toLocaleString('en-IN')}</span>
-            </div>
-            <Button onClick={handleAddToCart} size="sm" className="w-full">
-              Add {selectedProducts.length} item(s) to cart
-            </Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground mt-1">Select products to add them to your cart.</p>
-        )}
+       <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 space-y-3">
+        <div className="flex justify-between items-center px-1">
+            <span className="text-xs font-semibold uppercase tracking-wide">Ready for Glow?</span>
+            <span className="text-sm font-bold">₹{total.toLocaleString('en-IN')}</span>
+        </div>
+        <Button onClick={handleAddToCart} size="sm" className="w-full h-9 rounded-xl font-semibold" disabled={selectedProducts.length === 0}>
+          Add {selectedProducts.length} Selected to Cart
+        </Button>
        </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {analysis.morningRoutine.length > 0 && (
+            <div className="space-y-1.5 bg-background/30 p-3 rounded-xl">
+                <h4 className="font-bold text-xs uppercase text-primary">AM Routine</h4>
+                <ol className="space-y-1 text-xs list-decimal list-inside">
+                    {analysis.morningRoutine.map((step, i) => <li key={`morning-${i}`} className="text-muted-foreground">{step}</li>)}
+                </ol>
+            </div>
+        )}
 
-      {analysis.morningRoutine.length > 0 && (
-        <div>
-          <h3 className="font-bold">Morning Routine</h3>
-          <ol className="list-decimal list-inside text-sm mt-1">
-            {analysis.morningRoutine.map((step, i) => <li key={`morning-${i}`}>{step}</li>)}
-          </ol>
-        </div>
-      )}
-
-      {analysis.nightRoutine.length > 0 && (
-        <div>
-          <h3 className="font-bold">Night Routine</h3>
-          <ol className="list-decimal list-inside text-sm mt-1">
-            {analysis.nightRoutine.map((step, i) => <li key={`night-${i}`}>{step}</li>)}
-          </ol>
-        </div>
-      )}
+        {analysis.nightRoutine.length > 0 && (
+            <div className="space-y-1.5 bg-background/30 p-3 rounded-xl">
+                <h4 className="font-bold text-xs uppercase text-accent">PM Routine</h4>
+                <ol className="space-y-1 text-xs list-decimal list-inside">
+                    {analysis.nightRoutine.map((step, i) => <li key={`night-${i}`} className="text-muted-foreground">{step}</li>)}
+                </ol>
+            </div>
+        )}
+      </div>
     </div>
   );
 }

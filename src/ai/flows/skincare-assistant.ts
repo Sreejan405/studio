@@ -14,7 +14,8 @@ import {
   type SkincareAssistantOutput
 } from '@/ai/schemas/skincare-assistant';
 
-const productList = products.map(p => `${p.name}: ${p.description}`).join('\n');
+// Prepare a clean list of products for the prompt context
+const productContext = products.map(p => `- ${p.name}: ${p.benefit} (${p.description})`).join('\n');
 
 export async function skincareAssistant(
   input: SkincareAssistantInput
@@ -26,24 +27,26 @@ const prompt = ai.definePrompt({
   name: 'skincareAssistantPrompt',
   input: { schema: SkincareAssistantInputSchema },
   output: { schema: SkincareAssistantOutputSchema },
-  prompt: `You are an expert, friendly, and calm skincare assistant for GlowNiva Skincare. Your goal is to analyze a user's skin concerns and recommend a suitable routine using only products from our brand.
+  prompt: `You are the GlowNiva Skincare Expert, a friendly, professional, and knowledgeable digital consultant. Your goal is to analyze skin concerns and provide a personalized routine using ONLY GlowNiva products.
 
-Available products:
-${productList}
+AVAILABLE GLOWNIVA PRODUCTS:
+${productContext}
 
-User's message: {{{userMessage}}}
+USER CONTEXT:
+Message: {{{userMessage}}}
 {{#if photoDataUri}}
-User's photo: {{media url=photoDataUri}}
+Photo: {{media url=photoDataUri}}
 {{/if}}
 
-Based on the user's message and optional photo, perform the following steps:
-1.  **Analyze Skin:** Gently analyze the user's visible skin concerns (like dryness, oiliness, mild redness, or uneven texture). AVOID making medical claims. Use positive and encouraging language. If no photo is provided, base your analysis solely on the user's text description.
-2.  **Recommend Products:** Suggest 2-4 products from the available list that directly address the user's concerns. For each product, provide the exact product name and a brief, clear reason why it's a good fit.
-3.  **Create Routines:** Formulate a simple morning and night routine using the recommended products. List the product names for each routine.
+INSTRUCTIONS:
+1. **Analyze:** Carefully evaluate the user's concerns based on their text and optional photo. Focus on skin texture, hydration needs, and visible sensitivities. 
+2. **Tone:** Be encouraging, calm, and trustworthy. Use "we" and "our" to represent the brand.
+3. **Recommend:** Select 2-4 products that best address the concerns. Use the EXACT product names from the list above.
+4. **Routine:** Create a Morning and Night routine using the recommended products. Explain the order clearly.
+5. **Safety:** Do NOT provide medical diagnoses or claim to cure skin diseases. Use confident but non-medical language.
 
-Respond with the analysis, a list of recommendations, and the morning/night routines in the specified output format. Ensure every recommended product name exactly matches a name from the provided product list.`,
+Provide the analysis, recommendations with reasons, and the routines in the specified JSON format.`,
 });
-
 
 const skincareAssistantFlow = ai.defineFlow(
   {
@@ -52,13 +55,25 @@ const skincareAssistantFlow = ai.defineFlow(
     outputSchema: SkincareAssistantOutputSchema,
   },
   async (input) => {
-     if (
-      !process.env.SKINCARE_ASSISTANT_API_KEY ||
-      input.apiKey !== process.env.SKINCARE_ASSISTANT_API_KEY
-    ) {
-      throw new Error('Invalid API Key.');
+    // Check for API Key if it's set in the environment
+    const serverApiKey = process.env.SKINCARE_ASSISTANT_API_KEY;
+    
+    if (serverApiKey && input.apiKey !== serverApiKey) {
+      throw new Error('Invalid API Key. Please update it in the settings.');
     }
+    
+    // If no server key is set, we allow the request for testing/demo purposes
+    // but log a warning to the console.
+    if (!serverApiKey) {
+      console.warn('SKINCARE_ASSISTANT_API_KEY is not set in environment variables.');
+    }
+
     const { output } = await prompt(input);
-    return output!;
+    
+    if (!output) {
+      throw new Error('The assistant could not generate a response. Please try again.');
+    }
+
+    return output;
   }
 );
