@@ -12,6 +12,8 @@ interface CartContextType {
   clearCart: () => void;
   cartCount: number;
   totalPrice: number;
+  deliveryCharge: number;
+  grandTotal: number;
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -80,11 +82,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
   const totalPrice = cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  
+  // Delivery charge logic: ₹60 if total < ₹200 (and cart is not empty)
+  const deliveryCharge = (totalPrice > 0 && totalPrice < 200) ? 60 : 0;
+  const grandTotal = totalPrice + deliveryCharge;
 
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, totalPrice }}
+      value={{ 
+        cart, 
+        addToCart, 
+        removeFromCart, 
+        updateQuantity, 
+        clearCart, 
+        cartCount, 
+        totalPrice, 
+        deliveryCharge, 
+        grandTotal 
+      }}
     >
       {children}
     </CartContext.Provider>

@@ -272,7 +272,11 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
   const { toast } = useToast();
   const [selectedProducts, setSelectedProducts] = useState<string[]>(analysis.recommendations.map(r => r.productName));
   const products = getProductsByNames(selectedProducts);
-  const total = products.reduce((sum, p) => sum + p.price, 0);
+  const subtotal = products.reduce((sum, p) => sum + p.price, 0);
+  
+  // Apply the delivery charge logic for the chatbot preview as well
+  const deliveryCharge = (subtotal > 0 && subtotal < 200) ? 60 : 0;
+  const total = subtotal + deliveryCharge;
 
   const handleAddToCart = () => {
     const productsToAdd = getProductsByNames(selectedProducts);
@@ -323,9 +327,21 @@ function BotResponse({ analysis }: { analysis: SkincareAssistantOutput }) {
       </div>
       
        <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 space-y-3">
-        <div className="flex justify-between items-center px-1">
-            <span className="text-xs font-semibold uppercase tracking-wide">Ready for Glow?</span>
-            <span className="text-sm font-bold">₹{total.toLocaleString('en-IN')}</span>
+        <div className="space-y-1">
+            <div className="flex justify-between items-center px-1 text-xs text-muted-foreground">
+                <span>Subtotal</span>
+                <span>₹{subtotal.toLocaleString('en-IN')}</span>
+            </div>
+            {deliveryCharge > 0 && (
+                <div className="flex justify-between items-center px-1 text-xs text-muted-foreground">
+                    <span>Delivery Fee</span>
+                    <span>₹{deliveryCharge}</span>
+                </div>
+            )}
+            <div className="flex justify-between items-center px-1 pt-1 border-t border-primary/10">
+                <span className="text-xs font-semibold uppercase tracking-wide">Grand Total</span>
+                <span className="text-sm font-bold">₹{total.toLocaleString('en-IN')}</span>
+            </div>
         </div>
         <Button onClick={handleAddToCart} size="sm" className="w-full h-10 rounded-xl font-semibold shadow-sm" disabled={selectedProducts.length === 0}>
           Add {selectedProducts.length} to Cart

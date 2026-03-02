@@ -15,12 +15,15 @@ import { ScrollArea } from '../ui/scroll-area';
 import Link from 'next/link';
 
 export default function CartSheet() {
-  const { cart, cartCount, totalPrice } = useCart();
+  const { cart, cartCount, totalPrice, deliveryCharge, grandTotal } = useCart();
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(totalPrice);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
@@ -40,11 +43,22 @@ export default function CartSheet() {
           <Separator />
           <SheetFooter className="p-6">
             <div className="flex w-full flex-col gap-4">
-                <div className="flex justify-between text-base font-medium text-foreground">
-                    <p>Subtotal</p>
-                    <p>{formattedPrice}</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                      <p>Subtotal</p>
+                      <p>{formatCurrency(totalPrice)}</p>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                      <p>Delivery Fee</p>
+                      <p>{deliveryCharge > 0 ? formatCurrency(deliveryCharge) : 'FREE'}</p>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-between text-lg font-bold text-foreground">
+                      <p>Total</p>
+                      <p>{formatCurrency(grandTotal)}</p>
+                  </div>
                 </div>
-                <p className="mt-0.5 text-sm text-muted-foreground">Shipping and taxes calculated at checkout.</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Taxes calculated at checkout. Delivery fee applies for orders under ₹200.</p>
                 <Button className="w-full" size="lg" onClick={() => console.log('Checkout', cart)}>Checkout</Button>
                  <div className="mt-2 flex justify-center text-center text-sm text-muted-foreground">
                     <p>
