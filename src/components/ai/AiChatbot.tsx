@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Bot, X, Camera, Send, User, Loader, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Bot, X, Camera, Send, User, Loader, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
@@ -18,8 +18,6 @@ type Message = {
     analysis?: SkincareAssistantOutput;
     isError?: boolean;
 };
-
-const API_KEY_STORAGE_KEY = 'glowniva_api_key';
 
 const SKIN_TYPES = ['Dry', 'Oily', 'Combination', 'Normal', 'Sensitive'];
 const SKIN_CONCERNS = ['Acne', 'Aging', 'Dryness', 'Redness', 'Uneven Tone', 'Dark Circles'];
@@ -36,17 +34,6 @@ export default function AiChatbot() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const [isApiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-    const [apiKey, setApiKey] = useState('');
-    const [tempApiKey, setTempApiKey] = useState('');
-
-    useEffect(() => {
-        const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-        if (storedApiKey) {
-            setApiKey(storedApiKey);
-            setTempApiKey(storedApiKey);
-        }
-    }, []);
 
     useEffect(() => {
         if(isOpen && messages.length === 0) {
@@ -108,7 +95,6 @@ export default function AiChatbot() {
 
         try {
             const result = await skincareAssistant({
-                apiKey: apiKey,
                 userMessage: userMsgText || undefined,
                 skinType: selectedSkinType || undefined,
                 concerns: selectedConcerns.length > 0 ? selectedConcerns : undefined,
@@ -121,54 +107,20 @@ export default function AiChatbot() {
             const errorMessage = error.message || "I'm sorry, I encountered an error. Please try again.";
             setMessages(prev => [...prev, { sender: 'bot', text: errorMessage, isError: true }]);
             
-            if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('configuration error')) {
+            if (errorMessage.toLowerCase().includes('configuration error')) {
                 toast({
                   variant: "destructive",
                   title: "Configuration Error",
-                  description: "Please check your API key settings."
+                  description: "The assistant is temporarily unavailable. Please contact the administrator."
                 });
             }
         } finally {
             setIsLoading(false);
         }
     };
-
-    const handleSaveApiKey = () => {
-        setApiKey(tempApiKey);
-        localStorage.setItem(API_KEY_STORAGE_KEY, tempApiKey);
-        setApiKeyModalOpen(false);
-        toast({
-            title: 'Settings Updated',
-            description: 'Your API key has been saved.',
-        });
-    };
     
     return (
         <>
-            <Dialog open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Assistant Settings</DialogTitle>
-                        <DialogDescription>
-                            Enter your secret key to enable AI skincare analysis. This is the custom key set in your server configuration.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <Input
-                            id="apiKey"
-                            placeholder="Your Secret API Key"
-                            value={tempApiKey}
-                            onChange={(e) => setTempApiKey(e.target.value)}
-                            type="password"
-                        />
-                        <p className="text-[10px] text-muted-foreground">
-                            Note: This is different from the Google Gemini API key used by the backend.
-                        </p>
-                    </div>
-                    <Button onClick={handleSaveApiKey} className='w-full'>Save & Continue</Button>
-                </DialogContent>
-            </Dialog>
-
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="h-[90vh] max-w-2xl flex flex-col p-0 overflow-hidden sm:rounded-2xl border-none shadow-2xl">
                     <DialogHeader className="flex flex-row items-center justify-between border-b px-6 py-4 bg-primary/5">
@@ -181,10 +133,6 @@ export default function AiChatbot() {
                                 Personal routine builder & skin analysis.
                             </DialogDescription>
                          </div>
-                         <Button variant="ghost" size="icon" onClick={() => setApiKeyModalOpen(true)} className="h-8 w-8 rounded-full">
-                            <KeyRound className="h-4 w-4" />
-                            <span className="sr-only">Settings</span>
-                         </Button>
                     </DialogHeader>
                     
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
@@ -301,7 +249,7 @@ export default function AiChatbot() {
                             </div>
                         </div>
                         <p className="text-[9px] text-center text-muted-foreground w-full">
-                           Requires a valid GOOGLE_GENAI_API_KEY in the environment. For medical conditions, please see a dermatologist.
+                           For medical conditions, please see a dermatologist.
                         </p>
                     </CardFooter>
                 </DialogContent>

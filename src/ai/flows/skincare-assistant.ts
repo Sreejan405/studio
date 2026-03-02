@@ -57,16 +57,6 @@ const skincareAssistantFlow = ai.defineFlow(
     outputSchema: SkincareAssistantOutputSchema,
   },
   async (input) => {
-    // Check for API Key if it's set in the environment
-    const serverApiKey = process.env.SKINCARE_ASSISTANT_API_KEY;
-    
-    // Only enforce if a key is actually defined on the server
-    if (serverApiKey && serverApiKey !== 'your_secret_api_key_here') {
-        if (input.apiKey !== serverApiKey) {
-            throw new Error('Invalid Assistant API Key. Please check the settings in the chat window.');
-        }
-    }
-
     try {
         const { output } = await prompt(input);
         

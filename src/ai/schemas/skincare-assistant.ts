@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 export const SkincareAssistantInputSchema = z.object({
-  apiKey: z.string().optional().describe('The API key for the chatbot.'),
   photoDataUri: z
     .string()
     .optional()
