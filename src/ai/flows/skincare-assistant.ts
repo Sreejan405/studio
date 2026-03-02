@@ -60,21 +60,27 @@ const skincareAssistantFlow = ai.defineFlow(
     // Check for API Key if it's set in the environment
     const serverApiKey = process.env.SKINCARE_ASSISTANT_API_KEY;
     
-    if (serverApiKey && input.apiKey !== serverApiKey) {
-      throw new Error('Invalid API Key. Please update it in the settings.');
-    }
-    
-    // If no server key is set, we allow the request for testing/demo purposes
-    if (!serverApiKey) {
-      console.warn('SKINCARE_ASSISTANT_API_KEY is not set in environment variables.');
+    // Only enforce if a key is actually defined on the server
+    if (serverApiKey && serverApiKey !== 'your_secret_api_key_here') {
+        if (input.apiKey !== serverApiKey) {
+            throw new Error('Invalid Assistant API Key. Please check the settings in the chat window.');
+        }
     }
 
-    const { output } = await prompt(input);
-    
-    if (!output) {
-      throw new Error('The assistant could not generate a response. Please try again.');
-    }
+    try {
+        const { output } = await prompt(input);
+        
+        if (!output) {
+            throw new Error('The assistant could not generate a response. Please try again.');
+        }
 
-    return output;
+        return output;
+    } catch (error: any) {
+        // Catch common LLM errors (like missing GOOGLE_GENAI_API_KEY) and provide helpful feedback
+        if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('API key not found')) {
+            throw new Error('LLM configuration error: Please ensure a valid GOOGLE_GENAI_API_KEY is set in the .env file.');
+        }
+        throw error;
+    }
   }
 );

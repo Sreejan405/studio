@@ -3,14 +3,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Sparkles, MessageSquare, X, Camera, Send, User, Bot, Loader, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Sparkles, Bot, X, Camera, Send, User, Loader, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { skincareAssistant, SkincareAssistantOutput } from '@/ai/flows/skincare-assistant';
 import Image from 'next/image';
 import { getProductsByNames } from '@/lib/products';
 import { useCart } from '@/hooks/use-cart';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 type Message = {
@@ -117,15 +116,17 @@ export default function AiChatbot() {
             });
             setMessages(prev => [...prev, { sender: 'bot', analysis: result }]);
             setImageUri(null);
-            // Don't clear selections immediately so user can see what they sent, 
-            // but we could if needed.
         } catch (error: any) {
             console.error("AI assistant error:", error);
             const errorMessage = error.message || "I'm sorry, I encountered an error. Please try again.";
             setMessages(prev => [...prev, { sender: 'bot', text: errorMessage, isError: true }]);
             
-            if (errorMessage.toLowerCase().includes('api key')) {
-                setApiKeyModalOpen(true);
+            if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('configuration error')) {
+                toast({
+                  variant: "destructive",
+                  title: "Configuration Error",
+                  description: "Please check your API key settings."
+                });
             }
         } finally {
             setIsLoading(false);
@@ -147,10 +148,10 @@ export default function AiChatbot() {
             <Dialog open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                    <DialogTitle>Assistant Settings</DialogTitle>
-                    <DialogDescription>
-                        Enter your API key to enable AI skincare analysis. This is stored locally in your browser.
-                    </DialogDescription>
+                        <DialogTitle>Assistant Settings</DialogTitle>
+                        <DialogDescription>
+                            Enter your secret key to enable AI skincare analysis. This is the custom key set in your server configuration.
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <Input
@@ -160,6 +161,9 @@ export default function AiChatbot() {
                             onChange={(e) => setTempApiKey(e.target.value)}
                             type="password"
                         />
+                        <p className="text-[10px] text-muted-foreground">
+                            Note: This is different from the Google Gemini API key used by the backend.
+                        </p>
                     </div>
                     <Button onClick={handleSaveApiKey} className='w-full'>Save & Continue</Button>
                 </DialogContent>
@@ -194,6 +198,7 @@ export default function AiChatbot() {
                                         ? 'bg-primary text-primary-foreground' 
                                         : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-white border border-border/50'
                                 }`}>
+                                    {msg.isError && <AlertCircle className="h-4 w-4 mb-1 inline mr-2" />}
                                     {msg.text && <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
                                     {msg.analysis && <BotResponse analysis={msg.analysis} />}
                                 </div>
@@ -213,7 +218,6 @@ export default function AiChatbot() {
 
                     <CardFooter className="border-t p-4 bg-background flex flex-col gap-4">
                         <div className="w-full space-y-4">
-                            {/* Structured Inputs */}
                             <div className="space-y-3">
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">Skin Type</p>
@@ -297,7 +301,7 @@ export default function AiChatbot() {
                             </div>
                         </div>
                         <p className="text-[9px] text-center text-muted-foreground w-full">
-                           Our assistant uses AI to provide suggestions. For medical conditions, please see a dermatologist.
+                           Requires a valid GOOGLE_GENAI_API_KEY in the environment. For medical conditions, please see a dermatologist.
                         </p>
                     </CardFooter>
                 </DialogContent>
